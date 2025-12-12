@@ -1,7 +1,7 @@
 
 import { IDPRecord, KPIStats, GeminiAnalysisResult } from '../types';
 
-export const generatePortableReport = (
+export const generateHTMLString = (
   data: IDPRecord[],
   stats: KPIStats,
   analysis: GeminiAnalysisResult | null,
@@ -13,6 +13,17 @@ export const generatePortableReport = (
     return acc;
   }, {} as Record<string, number>);
   
+  // Top Skills Calculation
+  const skillFrequency: Record<string, number> = {};
+  data.forEach(d => {
+      const k = d.competencia ? d.competencia.trim() : '';
+      if(k) skillFrequency[k] = (skillFrequency[k] || 0) + 1;
+  });
+  const topSkills = Object.entries(skillFrequency)
+    .sort((a, b) => b[1] - a[1])
+    .slice(0, 5);
+  
+  // Skills by Country
   const skillCounts: Record<string, { tecnico: number; cloud: number; soft: number }> = {};
   data.forEach(d => {
       if (!skillCounts[d.pais]) skillCounts[d.pais] = { tecnico: 0, cloud: 0, soft: 0 };
@@ -28,7 +39,7 @@ export const generatePortableReport = (
   const datasetSoft = countries.map(c => skillCounts[c].soft);
 
   // 2. Build HTML Content
-  const htmlContent = `
+  return `
 <!DOCTYPE html>
 <html lang="es">
 <head>
@@ -118,8 +129,12 @@ export const generatePortableReport = (
         <canvas id="chartCategory"></canvas>
       </div>
       <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm">
+        <h3 class="font-bold text-slate-700 mb-4 text-sm">Top 5 Habilidades Solicitadas</h3>
+        <canvas id="chartTopSkills"></canvas>
+      </div>
+      <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm col-span-1 md:col-span-2">
         <h3 class="font-bold text-slate-700 mb-4 text-sm">Tipos de Habilidad por País</h3>
-        <canvas id="chartSkills"></canvas>
+        <canvas id="chartSkills" height="100"></canvas>
       </div>
     </div>
 
@@ -177,7 +192,27 @@ export const generatePortableReport = (
       options: { responsive: true, plugins: { legend: { position: 'bottom' } } }
     });
 
-    // 2. Skills Stacked Bar
+    // 2. Top Skills Chart
+    const ctxTopSkills = document.getElementById('chartTopSkills');
+    new Chart(ctxTopSkills, {
+      type: 'bar',
+      data: {
+        labels: ${JSON.stringify(topSkills.map(s => s[0]))},
+        datasets: [{
+          label: 'Solicitudes',
+          data: ${JSON.stringify(topSkills.map(s => s[1]))},
+          backgroundColor: '#10b981',
+          borderRadius: 4
+        }]
+      },
+      options: { 
+        indexAxis: 'y',
+        responsive: true, 
+        plugins: { legend: { display: false } } 
+      }
+    });
+
+    // 3. Skills Stacked Bar
     const ctxSkills = document.getElementById('chartSkills');
     new Chart(ctxSkills, {
       type: 'bar',
@@ -199,8 +234,15 @@ export const generatePortableReport = (
 </body>
 </html>
   `;
+};
 
-  // 3. Trigger Download
+export const generatePortableReport = (
+  data: IDPRecord[],
+  stats: KPIStats,
+  analysis: GeminiAnalysisResult | null,
+  filters: { country: string; manager: string }
+) => {
+  const htmlContent = generateHTMLString(data, stats, analysis, filters);
   const blob = new Blob([htmlContent], { type: 'text/html;charset=utf-8' });
   const url = URL.createObjectURL(blob);
   const link = document.createElement("a");
