@@ -1,5 +1,5 @@
 
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { Layout } from './components/Layout';
 import { KPICards } from './components/KPICards';
 import { ChartsContainer } from './components/ChartsContainer';
@@ -91,13 +91,7 @@ const App: React.FC = () => {
     }
   };
 
-  useEffect(() => {
-    // Initial analysis on mount if data exists
-    if (data.length > 0) {
-      runAnalysis();
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []); 
+  // NOTE: Removed useEffect that triggered runAnalysis() on mount to comply with manual trigger request.
 
   // 3. Handlers
   const handleDownloadTemplate = () => {
@@ -114,7 +108,7 @@ const App: React.FC = () => {
 
   const handleResetData = () => {
     if (window.confirm('¿Estás seguro de borrar los datos actuales?')) {
-      setData(MOCK_DATA); // This is now empty
+      setData(MOCK_DATA); // This is now empty or default
       setIsCustomData(false);
       setFilterCountry('Todos');
       setFilterManager('Todos');
@@ -142,11 +136,9 @@ const App: React.FC = () => {
             setFilterCountry('Todos');
             setFilterManager('Todos');
 
-            // Re-run analysis automatically for the new dataset
-            setAnalysis(null); // Clear old analysis
-            setTimeout(() => {
-               analyzeIDPData(parsedData).then(res => setAnalysis(res)).catch(() => setAiError(true));
-            }, 500);
+            // Reset analysis so user has to click the button again manually
+            setAnalysis(null); 
+            setAiError(false);
           } else {
             alert("No se encontraron registros válidos en el CSV. Asegúrate de usar la Plantilla o verificar los encabezados.");
           }
