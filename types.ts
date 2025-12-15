@@ -24,6 +24,7 @@ export interface KPIStats {
   criticalRiskCount: number; 
   topCategory: string;
   topCountry: string;
+  topCompletionCountry: string; // New KPI
 }
 
 export interface GeminiAnalysisResult {

@@ -1,6 +1,7 @@
+
 import React from 'react';
 import { KPIStats } from '../types';
-import { TrendingUp, CheckCircle, AlertTriangle, Globe, UserCheck, Layers } from 'lucide-react';
+import { TrendingUp, CheckCircle, AlertTriangle, Globe, UserCheck, Layers, Award } from 'lucide-react';
 
 interface KPICardsProps {
   stats: KPIStats;
@@ -21,7 +22,7 @@ const Card: React.FC<{ title: string; value: string | number; sub?: string; icon
 
 export const KPICards: React.FC<KPICardsProps> = ({ stats }) => {
   return (
-    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4 mb-6">
+    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 mb-6">
       <Card
         title="Progreso Promedio"
         value={`${stats.avgProgress.toFixed(1)}%`}
@@ -35,6 +36,13 @@ export const KPICards: React.FC<KPICardsProps> = ({ stats }) => {
         sub={`${stats.totalActivities} Actividades Totales`}
         icon={<CheckCircle size={20} />}
         color="bg-emerald-500"
+      />
+      <Card
+        title="Líder Completados"
+        value={stats.topCompletionCountry}
+        sub="Mayor Cumplimiento"
+        icon={<Award size={20} />}
+        color="bg-orange-500"
       />
       <Card
         title="En Riesgo (<40%)"
@@ -53,7 +61,7 @@ export const KPICards: React.FC<KPICardsProps> = ({ stats }) => {
       <Card
         title="País Líder"
         value={stats.topCountry}
-        sub="Más actividad"
+        sub="Más actividad asignada"
         icon={<Globe size={20} />}
         color="bg-violet-500"
       />

@@ -69,7 +69,7 @@ export const generateHTMLString = (
   <main class="max-w-7xl mx-auto px-4 mt-8">
     
     <!-- KPIs -->
-    <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4 mb-8">
+    <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 mb-8">
       <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm">
         <div class="text-slate-500 text-xs uppercase font-bold">Progreso</div>
         <div class="text-2xl font-bold text-blue-600">${stats.avgProgress.toFixed(1)}%</div>
@@ -77,6 +77,10 @@ export const generateHTMLString = (
       <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm">
         <div class="text-slate-500 text-xs uppercase font-bold">Completados</div>
         <div class="text-2xl font-bold text-emerald-600">${stats.completedPercentage.toFixed(1)}%</div>
+      </div>
+      <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm">
+        <div class="text-slate-500 text-xs uppercase font-bold">Líder Completados</div>
+        <div class="text-2xl font-bold text-orange-600">${stats.topCompletionCountry}</div>
       </div>
       <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm">
         <div class="text-slate-500 text-xs uppercase font-bold">Actividades</div>

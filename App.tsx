@@ -35,31 +35,77 @@ const App: React.FC = () => {
   }, [data, filterCountry, filterManager]);
 
   const stats: KPIStats = useMemo(() => {
-    if (filteredData.length === 0) return { avgProgress: 0, completedPercentage: 0, totalActivities: 0, uniqueCollaborators: 0, criticalRiskCount: 0, topCategory: '-', topCountry: '-' };
+    if (filteredData.length === 0) return { avgProgress: 0, completedPercentage: 0, totalActivities: 0, uniqueCollaborators: 0, criticalRiskCount: 0, topCategory: '-', topCountry: '-', topCompletionCountry: '-' };
     
     const total = filteredData.length;
     // Count unique IDs (Collaborators)
     const uniqueCollaborators = new Set(filteredData.map(d => d.codigo)).size;
 
     const avgProg = filteredData.reduce((acc, curr) => acc + curr.progreso, 0) / total;
-    const completed = filteredData.filter(d => (d.estatus && d.estatus.toLowerCase().includes('completado')) || d.progreso === 100).length;
+    
+    const completedItems = filteredData.filter(d => (d.estatus && d.estatus.toLowerCase().includes('completado')) || d.progreso === 100);
+    const completedCount = completedItems.length;
     const risks = filteredData.filter(d => d.progreso < 40 && (!d.estatus || !d.estatus.toLowerCase().includes('pendiente'))).length;
     
-    // Mode calculations
-    const catCount = filteredData.reduce((acc, curr) => { acc[curr.categoria] = (acc[curr.categoria] || 0) + 1; return acc; }, {} as any);
-    const topCat = Object.keys(catCount).length ? Object.keys(catCount).reduce((a, b) => catCount[a] > catCount[b] ? a : b) : '-';
+    // Mode calculations - Category
+    const catCount = filteredData.reduce((acc, curr) => { 
+      acc[curr.categoria] = (acc[curr.categoria] || 0) + 1; 
+      return acc; 
+    }, {} as Record<string, number>);
     
-    const countryCount = filteredData.reduce((acc, curr) => { acc[curr.pais] = (acc[curr.pais] || 0) + 1; return acc; }, {} as any);
-    const topCountry = Object.keys(countryCount).length ? Object.keys(countryCount).reduce((a, b) => countryCount[a] > countryCount[b] ? a : b) : '-';
+    const topCat = Object.keys(catCount).length 
+      ? Object.keys(catCount).reduce((a, b) => catCount[a] > catCount[b] ? a : b) 
+      : '-';
+    
+    // Mode calculations - Country (Volume)
+    const countryCount = filteredData.reduce((acc, curr) => { 
+      acc[curr.pais] = (acc[curr.pais] || 0) + 1; 
+      return acc; 
+    }, {} as Record<string, number>);
+
+    const topCountry = Object.keys(countryCount).length 
+      ? Object.keys(countryCount).reduce((a, b) => countryCount[a] > countryCount[b] ? a : b) 
+      : '-';
+
+    // CORRECTED LOGIC: Find Country with highest Efficiency Rate (Percentage)
+    const uniqueCountriesInView = Array.from(new Set(filteredData.map(d => d.pais))).filter(Boolean);
+    
+    let bestRate = -1;
+    let bestCountry = '-';
+    // let bestDetails = ''; // e.g. "19/28"
+
+    uniqueCountriesInView.forEach(c => {
+       const countryItems = filteredData.filter(d => d.pais === c);
+       const totalC = countryItems.length;
+       if (totalC === 0) return;
+
+       const completedC = countryItems.filter(d => (d.estatus && d.estatus.toLowerCase().includes('completado')) || d.progreso === 100).length;
+       const rate = (completedC / totalC) * 100;
+       
+       // Compare rates. If equal, prefer higher volume of completions as tie-breaker
+       if (rate > bestRate) {
+          bestRate = rate;
+          bestCountry = c;
+       } else if (rate === bestRate) {
+          // Tie-breaker logic (optional): pick the one with more actual completed items
+          const currentBestItems = filteredData.filter(d => d.pais === bestCountry && ((d.estatus && d.estatus.toLowerCase().includes('completado')) || d.progreso === 100)).length;
+          if (completedC > currentBestItems) {
+             bestCountry = c;
+          }
+       }
+    });
+
+    const topCompletionCountry = bestCountry !== '-' ? `${bestCountry} (${bestRate.toFixed(0)}%)` : '-';
 
     return {
       avgProgress: avgProg,
-      completedPercentage: (completed / total) * 100,
+      completedPercentage: (completedCount / total) * 100,
       totalActivities: total,
       uniqueCollaborators: uniqueCollaborators,
       criticalRiskCount: risks,
       topCategory: topCat,
-      topCountry: topCountry
+      topCountry: topCountry,
+      topCompletionCountry: topCompletionCountry
     };
   }, [filteredData]);
 
@@ -90,8 +136,6 @@ const App: React.FC = () => {
       setLoadingAI(false);
     }
   };
-
-  // NOTE: Removed useEffect that triggered runAnalysis() on mount to comply with manual trigger request.
 
   // 3. Handlers
   const handleDownloadTemplate = () => {
